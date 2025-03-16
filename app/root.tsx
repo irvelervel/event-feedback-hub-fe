@@ -8,6 +8,8 @@ import {
 } from 'react-router'
 
 import { ApolloClient } from '@apollo/client/core'
+import { ApolloProvider } from '@apollo/client/react'
+import createApolloClient from './helpers/apollo-client'
 
 import { createHttpLink } from '@apollo/client/link/http'
 import { InMemoryCache } from '@apollo/client/cache/inmemory/inMemoryCache'
@@ -39,9 +41,9 @@ export const links: Route.LinksFunction = () => [
 //     // Use createHttpLink instead of uri
 //     uri: 'http://localhost:4000/graphql', //Path to GraphQL schema
 //     // uri: 'https://countries.trevorblades.com/graphql', //Path to GraphQL schema
-//     headers: {
-//       'Access-Control-Allow-Origin': '*', //Cors management
-//     },
+//     // headers: {
+//     //   'Access-Control-Allow-Origin': '*', //Cors management
+//     // },
 //   }),
 //   cache: new InMemoryCache(), // Cache management
 // })
@@ -97,7 +99,11 @@ export async function loader() {
 }
 
 export default function App() {
-  return <Outlet />
+  return (
+    <ApolloProvider client={createApolloClient()}>
+      <Outlet />
+    </ApolloProvider>
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
