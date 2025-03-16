@@ -29,7 +29,7 @@ export const GET_EVENT_FEEDBACKS = gql`
 
 // mutation for adding a new feedback, through the sidebar form
 export const ADD_FEEDBACK = gql`
-  mutation AddF($feedback: AddFeedbackInput!) {
+  mutation AddFeedback($feedback: AddFeedbackInput!) {
     addFeedback(feedback: $feedback) {
       id
       author

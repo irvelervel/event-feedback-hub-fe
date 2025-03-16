@@ -15,6 +15,7 @@ import Hero from '~/components/Hero'
 import Stream from '~/components/Stream'
 import FeedbackForm from '~/components/FeedbackForm'
 import Filters from '~/components/Filters'
+import performQueries from '~/utils/data-fetching'
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -31,28 +32,33 @@ const client = createApolloClient()
 export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
   // initial load, when the page firstly loads. Here I fetch (on the server) all the events and all the feedbacks, to create the first view.
   // when both queries are resolved, I return data to the client.
-  const [eventsData, feedbacksData] = await Promise.all([
-    client.query({
-      query: GET_ALL_EVENTS,
-      // these initial queries have to be performed fully
-      fetchPolicy: 'no-cache',
-    }),
-    client.query({
-      query: GET_EVENT_FEEDBACKS,
-      // these initial queries have to be performed fully
-      fetchPolicy: 'no-cache',
-      variables: {
-        id: '',
-      },
-    }),
-  ])
 
-  const {
-    data: { events },
-  } = eventsData
-  const {
-    data: { feedbacksForEvent },
-  } = feedbacksData
+  const { events, feedbacksForEvent } = await performQueries(client, false, {
+    id: '',
+  })
+
+  // const [eventsData, feedbacksData] = await Promise.all([
+  //   client.query({
+  //     query: GET_ALL_EVENTS,
+  //     // these initial queries have to be performed fully
+  //     fetchPolicy: 'no-cache',
+  //   }),
+  //   client.query({
+  //     query: GET_EVENT_FEEDBACKS,
+  //     // these initial queries have to be performed fully
+  //     fetchPolicy: 'no-cache',
+  //     variables: {
+  //       id: '',
+  //     },
+  //   }),
+  // ])
+
+  // const {
+  //   data: { events },
+  // } = eventsData
+  // const {
+  //   data: { feedbacksForEvent },
+  // } = feedbacksData
 
   return { events, feedbacksForEvent }
 }
@@ -63,27 +69,31 @@ export async function clientLoader({
 }: Route.ClientLoaderArgs) {
   // the clientLoader function gets triggered after the completion of clientAction
 
-  const [eventsData, feedbacksData] = await Promise.all([
-    client.query({
-      query: GET_ALL_EVENTS,
-      // caching here is allowed
-    }),
-    client.query({
-      query: GET_EVENT_FEEDBACKS,
-      // caching here is allowed
-      variables: {
-        // retrieves the event id saved by the action
-        id: sessionStorage.getItem('event_filter') || '',
-      },
-    }),
-  ])
+  const { events, feedbacksForEvent } = await performQueries(client, true, {
+    id: sessionStorage.getItem('event_filter') || '',
+  })
 
-  const {
-    data: { events },
-  } = eventsData
-  const {
-    data: { feedbacksForEvent },
-  } = feedbacksData
+  // const [eventsData, feedbacksData] = await Promise.all([
+  //   client.query({
+  //     query: GET_ALL_EVENTS,
+  //     // caching here is allowed
+  //   }),
+  //   client.query({
+  //     query: GET_EVENT_FEEDBACKS,
+  //     // caching here is allowed
+  //     variables: {
+  //       // retrieves the event id saved by the action
+  //       id: sessionStorage.getItem('event_filter') || '',
+  //     },
+  //   }),
+  // ])
+
+  // const {
+  //   data: { events },
+  // } = eventsData
+  // const {
+  //   data: { feedbacksForEvent },
+  // } = feedbacksData
 
   return { events, feedbacksForEvent }
 }
