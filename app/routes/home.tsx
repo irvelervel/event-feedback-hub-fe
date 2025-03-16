@@ -37,6 +37,7 @@ export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
     false, // these initial queries have to be performed fully
     {
       id: '', // empty string as id so all feedbacks will be retrieved
+      rating: 1, // default rating so all feedbacks will be retrieved
     }
   )
 
@@ -55,6 +56,7 @@ export async function clientLoader({
     {
       // retrieves the event id saved by the action
       id: sessionStorage.getItem('event_filter') || '',
+      rating: 1, // default rating so all feedbacks will be retrieved
     }
   )
 
