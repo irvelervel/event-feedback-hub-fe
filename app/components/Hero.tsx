@@ -21,7 +21,7 @@ const Hero = () => (
       <div className="mt-8 gap-3 flex justify-center">
         <a
           className="inline-flex justify-center items-center gap-x-3 text-center bg-linear-to-tl from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 border border-transparent text-white text-sm font-medium rounded-md focus:outline-hidden focus:from-violet-600 focus:to-blue-600 py-3 px-4"
-          href="#"
+          href="#target"
         >
           Get started
           <svg
@@ -35,6 +35,7 @@ const Hero = () => (
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            id="target"
           >
             <path d="m9 18 6-6-6-6" />
           </svg>

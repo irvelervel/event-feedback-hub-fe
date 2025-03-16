@@ -29,15 +29,17 @@ export function meta({}: Route.MetaArgs) {
 const client = createApolloClient()
 
 export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
-  console.log('SSR LOADER')
-
+  // initial load, when the page firstly loads. Here I fetch (on the server) all the events and all the feedbacks, to create the first view.
+  // when both queries are resolved, I return data to the client.
   const [eventsData, feedbacksData] = await Promise.all([
     client.query({
       query: GET_ALL_EVENTS,
+      // these initial queries have to be performed fully
       fetchPolicy: 'no-cache',
     }),
     client.query({
       query: GET_EVENT_FEEDBACKS,
+      // these initial queries have to be performed fully
       fetchPolicy: 'no-cache',
       variables: {
         id: '',
@@ -52,8 +54,6 @@ export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
     data: { feedbacksForEvent },
   } = feedbacksData
 
-  // console.log('FEEDBACKS LENGTH', feedbacksForEvent.length)
-  // console.log('DATA', events, feedbacksForEvent)
   return { events, feedbacksForEvent }
 }
 
@@ -61,16 +61,16 @@ export async function clientLoader({
   serverLoader,
   params,
 }: Route.ClientLoaderArgs) {
-  console.log('CLIENT LOADER')
+  // the clientLoader function gets triggered after the completion of clientAction
 
   const [eventsData, feedbacksData] = await Promise.all([
     client.query({
       query: GET_ALL_EVENTS,
-      // caching here is available
+      // caching here is allowed
     }),
     client.query({
       query: GET_EVENT_FEEDBACKS,
-      // caching here is available
+      // caching here is allowed
       variables: {
         // retrieves the event id saved by the action
         id: sessionStorage.getItem('event_filter') || '',
@@ -89,29 +89,46 @@ export async function clientLoader({
 }
 
 export async function clientAction({ request }: Route.ClientActionArgs) {
+  // the clientAction function gets triggered when the FeedbackForm component gets submitted (a new feedback is sent to the mutation)
+  // let's retrieve the form data from the request, and shape the right object for the mutation
   let formData = await request.formData()
   const values = Object.fromEntries(formData) as Record<string, any>
-  // console.log('VALUES', values)
+
   values.author = `${values.firstname} ${values.lastname}`
   values.rating = parseInt(values.rating as string)
   delete values.firstname
   delete values.lastname
-  // SPIEGA
+
+  // since the clientLoader function will be automatically triggered after this action (for data refetching)
+  // I need to store somewhere the current event_filter value, so the fresh feedbacks retrieval can be
+  // light, fast and relevant to what the user is currently seeing
+  // I could use the address bar, but since we currently have a single route in the app I will use sessionStorage
+  // (so it will vanish after tab closing and it's accessible to clientLoader since it runs on the client)
   sessionStorage.setItem('event_filter', values.event_filter)
-  // console.log('SETTO SESSIONSTORAGE', values.event_filter)
+  // this event_filter value came from a hidden input field in the FeedbackForm, after setting it in sessionStorage
+  // I delete it since I don't want it to be part of the variable I'll pass to the mutation
   delete values.event_filter
 
-  const client = createApolloClient()
-  await client.mutate({
+  const mutationResult = await client.mutate({
     mutation: ADD_FEEDBACK,
     variables: {
       feedback: values,
     },
   })
-  // hack
-  const form = document.getElementById('feedback-form') as HTMLFormElement
-  form.reset()
+
+  // checking if the mutation performed ok
+  if (
+    mutationResult &&
+    mutationResult.data &&
+    mutationResult.data.addFeedback
+  ) {
+    // in order to reset the form after correct submission, I'm selecting it from the DOM
+    const form = document.getElementById('feedback-form') as HTMLFormElement
+    form.reset()
+  }
+
   return
+  // data will now be validated again by an automatic execution of the clientLoader function
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -126,12 +143,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   )
 
   // preparing an Apollo useQuery hook to grab updated feedbacks on UI interactions and subscription triggers
+  // we're refetching just the dataset the user is currently seeing
   const { data, refetch } = useQuery(GET_EVENT_FEEDBACKS, {
     variables: { id: selectedEvent },
   })
 
   // preparing an Apollo useSubscription hook to be able to receive new feedback events from Apollo Server on the BE
-  const newData = useSubscription<{ feedbackPosted: Feedback }>(
+  const subscribed = useSubscription<{ feedbackPosted: Feedback }>(
     FEEDBACK_SUBSCRIPTION
   )
 
@@ -140,36 +158,40 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   // but since they change on filtering and even from the outside (subscription) I cannot just follow the traditional action/loader
   // pattern of RR.
   useEffect(() => {
-    console.log('ARRIVATI FBS DA LOADER', loaderData.feedbacksForEvent)
+    // loader or clientLoader fetched fresh data
     setFeedbacks(loaderData.feedbacksForEvent)
   }, [loaderData.feedbacksForEvent])
 
   // since we have just one route, changing the event filter doesn't change the URL. Therefore, I'm relying on a local useEffect to
   // grab fresh feedbacks on event filter change
   useEffect(() => {
-    // console.log('cambiato filtro evento')
+    // event filter change
     refetch()
   }, [selectedEvent])
 
-  // whenever fresh data comes from a filter change or a subscription trigger, use this data as the new array of feedbacks
+  // if Apollo Server stores a new feedback, a notification hits the Client. We're listening to these notifications in the data
+  // useSubscription returns
   useEffect(() => {
-    // console.log('cambiato data', data)
+    // subscription notification received!
+    if (
+      subscribed.data &&
+      subscribed.data.feedbackPosted &&
+      // prevents unnecessary traffic, refetches feedbacks just if the new feedback belongs to the selected filter or if there isn't
+      // any filter selected
+      (subscribed.data.feedbackPosted.event.id === selectedEvent ||
+        selectedEvent === '')
+    ) {
+      refetch()
+    }
+  }, [subscribed])
+
+  // whenever fresh data comes from the refetch function, set it as the new feedbacks
+  useEffect(() => {
+    // refetch function has been executed and fresh data arrived
     if (data && data.feedbacksForEvent) {
       setFeedbacks(data.feedbacksForEvent)
     }
   }, [data])
-
-  useEffect(() => {
-    if (
-      newData.data &&
-      newData.data.feedbackPosted
-      // prevents unnecessary traffic, refetches just if the new feedback belongs to the selected filter
-      // && newData.data.feedbackPosted.event.id === selectedEvent
-    ) {
-      console.log('FETCHO')
-      refetch()
-    }
-  }, [newData])
 
   return (
     <div className="flex flex-col min-h-screen">

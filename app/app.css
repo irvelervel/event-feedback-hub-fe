@@ -5,6 +5,10 @@
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* ...coulnd't find it on tailwind */
 .star-spacing {
   margin-inline-start: -2em;

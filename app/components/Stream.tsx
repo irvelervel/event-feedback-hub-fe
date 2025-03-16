@@ -8,7 +8,7 @@ const Stream = ({ feedbacks }: { feedbacks: Feedback[] }) => (
     <ul
       aria-label="User feed"
       role="feed"
-      className="relative flex flex-col gap-12 py-12 pl-8 before:absolute before:top-0 before:left-8 before:h-full before:-translate-x-1/2 before:border before:border-dashed before:border-slate-200 after:absolute after:top-6 after:left-8 after:bottom-6 after:-translate-x-1/2 after:border after:border-slate-200 "
+      className="relative flex flex-col gap-12 py-12 pl-8 pr-8 before:absolute before:top-0 before:left-8 before:h-full before:-translate-x-1/2 before:border before:border-dashed before:border-slate-200 after:absolute after:top-6 after:left-8 after:bottom-6 after:-translate-x-1/2 after:border after:border-slate-200 "
     >
       {/* reverts the stream order, ofc creating a copy of the data */}
       {feedbacks

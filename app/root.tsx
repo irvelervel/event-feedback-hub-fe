@@ -11,7 +11,7 @@ import { ApolloProvider } from '@apollo/client/react'
 import createApolloClient from './utils/apollo-client'
 import './app.css'
 
-// ...the standard root.tsx from the template
+// ...the standard root.tsx from the boilerplate
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
