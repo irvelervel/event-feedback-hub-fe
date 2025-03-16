@@ -71,6 +71,7 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
 
   values.author = `${values.firstname} ${values.lastname}`
   values.rating = parseInt(values.rating as string)
+  values.timestamp = Math.floor(new Date().getTime() / 1000) // generates current timestamp
   delete values.firstname
   delete values.lastname
 

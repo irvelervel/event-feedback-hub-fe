@@ -19,6 +19,7 @@ export const GET_EVENT_FEEDBACKS = gql`
       author
       rating
       content
+      timestamp
       event {
         id
         name
@@ -35,6 +36,7 @@ export const ADD_FEEDBACK = gql`
       author
       content
       rating
+      timestamp
       event {
         id
         name
@@ -52,6 +54,7 @@ export const FEEDBACK_SUBSCRIPTION = gql`
       author
       rating
       content
+      timestamp
       event {
         id
         name
