@@ -13,8 +13,8 @@ export const GET_ALL_EVENTS = gql`
 // query for getting the feedbacks specific to a single event, or all the feedbacks if $id is not provided
 // (useful for the initial server-side loading, where all available feedbacks should be displayed)
 export const GET_EVENT_FEEDBACKS = gql`
-  query FeedbackForEvent($id: ID) {
-    feedbacksForEvent(id: $id) {
+  query FeedbacksForEvent($rating: Int, $id: ID) {
+    feedbacksForEvent(rating: $rating, id: $id) {
       id
       author
       rating

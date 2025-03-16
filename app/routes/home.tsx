@@ -3,7 +3,6 @@ import createApolloClient from '../utils/apollo-client'
 import {
   ADD_FEEDBACK,
   GET_EVENT_FEEDBACKS,
-  GET_ALL_EVENTS,
   FEEDBACK_SUBSCRIPTION,
 } from '~/graphql/queries'
 import type { Event, Feedback } from '../graphql/__generated__/graphql'
@@ -33,32 +32,13 @@ export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
   // initial load, when the page firstly loads. Here I fetch (on the server) all the events and all the feedbacks, to create the first view.
   // when both queries are resolved, I return data to the client.
 
-  const { events, feedbacksForEvent } = await performQueries(client, false, {
-    id: '',
-  })
-
-  // const [eventsData, feedbacksData] = await Promise.all([
-  //   client.query({
-  //     query: GET_ALL_EVENTS,
-  //     // these initial queries have to be performed fully
-  //     fetchPolicy: 'no-cache',
-  //   }),
-  //   client.query({
-  //     query: GET_EVENT_FEEDBACKS,
-  //     // these initial queries have to be performed fully
-  //     fetchPolicy: 'no-cache',
-  //     variables: {
-  //       id: '',
-  //     },
-  //   }),
-  // ])
-
-  // const {
-  //   data: { events },
-  // } = eventsData
-  // const {
-  //   data: { feedbacksForEvent },
-  // } = feedbacksData
+  const { events, feedbacksForEvent } = await performQueries(
+    client, // Apollo Client instance
+    false, // these initial queries have to be performed fully
+    {
+      id: '', // empty string as id so all feedbacks will be retrieved
+    }
+  )
 
   return { events, feedbacksForEvent }
 }
@@ -69,31 +49,14 @@ export async function clientLoader({
 }: Route.ClientLoaderArgs) {
   // the clientLoader function gets triggered after the completion of clientAction
 
-  const { events, feedbacksForEvent } = await performQueries(client, true, {
-    id: sessionStorage.getItem('event_filter') || '',
-  })
-
-  // const [eventsData, feedbacksData] = await Promise.all([
-  //   client.query({
-  //     query: GET_ALL_EVENTS,
-  //     // caching here is allowed
-  //   }),
-  //   client.query({
-  //     query: GET_EVENT_FEEDBACKS,
-  //     // caching here is allowed
-  //     variables: {
-  //       // retrieves the event id saved by the action
-  //       id: sessionStorage.getItem('event_filter') || '',
-  //     },
-  //   }),
-  // ])
-
-  // const {
-  //   data: { events },
-  // } = eventsData
-  // const {
-  //   data: { feedbacksForEvent },
-  // } = feedbacksData
+  const { events, feedbacksForEvent } = await performQueries(
+    client, // Apollo Client instance
+    true, // caching here is allowed
+    {
+      // retrieves the event id saved by the action
+      id: sessionStorage.getItem('event_filter') || '',
+    }
+  )
 
   return { events, feedbacksForEvent }
 }
@@ -147,6 +110,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   // saving in the component's state the event filter value
   const [selectedEvent, setSelectedEvent] = useState('')
+  const [ratingFilter, setRatingFilter] = useState(1)
   // feedbacks have to be stored locally to handle the filtering but most importantly the subscription
   const [feedbacks, setFeedbacks] = useState<Feedback[]>(
     loaderData.feedbacksForEvent
@@ -155,7 +119,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   // preparing an Apollo useQuery hook to grab updated feedbacks on UI interactions and subscription triggers
   // we're refetching just the dataset the user is currently seeing
   const { data, refetch } = useQuery(GET_EVENT_FEEDBACKS, {
-    variables: { id: selectedEvent },
+    variables: { rating: ratingFilter, id: selectedEvent },
   })
 
   // preparing an Apollo useSubscription hook to be able to receive new feedback events from Apollo Server on the BE
@@ -177,7 +141,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     // event filter change
     refetch()
-  }, [selectedEvent])
+  }, [selectedEvent, ratingFilter])
 
   // if Apollo Server stores a new feedback, a notification hits the Client. We're listening to these notifications in the data
   // useSubscription returns
@@ -216,6 +180,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             events={events}
             selectedEvent={selectedEvent}
             setSelectedEvent={setSelectedEvent}
+            ratingFilter={ratingFilter}
+            setRatingFilter={setRatingFilter}
           />
           <Stream feedbacks={feedbacks} />
         </main>
