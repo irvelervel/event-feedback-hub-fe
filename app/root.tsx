@@ -1,3 +1,4 @@
+import type { Route } from './+types/root'
 import {
   isRouteErrorResponse,
   Links,
@@ -6,21 +7,11 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router'
-
-import { ApolloClient } from '@apollo/client/core'
 import { ApolloProvider } from '@apollo/client/react'
 import createApolloClient from './helpers/apollo-client'
-
-import { createHttpLink } from '@apollo/client/link/http'
-import { InMemoryCache } from '@apollo/client/cache/inmemory/inMemoryCache'
-
-// import { useQuery } from '@apollo/client/react/hooks'
-// import type { Country } from '~/graphql/__generated_s_/graphql'
-// import { GET_ALL_COUNTRIES } from '~/graphql/queries'
-
-import type { Route } from './+types/root'
 import './app.css'
-// import { gql } from '@apollo/client/core'
+
+// ...the standard root.tsx from the template
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -34,19 +25,6 @@ export const links: Route.LinksFunction = () => [
     href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
   },
 ]
-
-// const graphQLClient = new ApolloClient({
-//   ssrMode: true, // Indicates that we want to use server side rendering
-//   link: createHttpLink({
-//     // Use createHttpLink instead of uri
-//     uri: 'http://localhost:4000/graphql', //Path to GraphQL schema
-//     // uri: 'https://countries.trevorblades.com/graphql', //Path to GraphQL schema
-//     // headers: {
-//     //   'Access-Control-Allow-Origin': '*', //Cors management
-//     // },
-//   }),
-//   cache: new InMemoryCache(), // Cache management
-// })
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -66,40 +44,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 
-export async function loader() {
-  // const contacts = ['test']
-  // return { contacts }
-  // const { loading, error, data } = useQuery(GET_ALL_COUNTRIES)
-  // return { loading, error, data }
-  // Initialize Apollo client
-  // const graphQLClient = new ApolloClient({
-  //   ssrMode: true, // Indicates that we want to use server side rendering
-  //   link: createHttpLink({
-  //     // Use createHttpLink instead of uri
-  //     uri: 'http://localhost:4000/graphql', //Path to GraphQL schema
-  //     // uri: 'https://countries.trevorblades.com/graphql', //Path to GraphQL schema
-  //     headers: {
-  //       'Access-Control-Allow-Origin': '*', //Cors management
-  //     },
-  //   }),
-  //   cache: new InMemoryCache(), // Cache management
-  // })
-  // const boh = await graphQLClient.query({
-  //   query: gql`
-  //     query GetAllCountries {
-  //       feedbacks {
-  //         id
-  //         author
-  //       }
-  //     }
-  //   `,
-  // })
-  // console.log('??', boh)
-  // return boh
-}
-
 export default function App() {
   return (
+    // here I added the ApolloProvider wrapper to allow queries/mutations inside the React tree
     <ApolloProvider client={createApolloClient()}>
       <Outlet />
     </ApolloProvider>

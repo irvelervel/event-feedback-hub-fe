@@ -1,12 +1,24 @@
 import { gql } from '@apollo/client/core'
 
-export const GET_ALL_FEEDBACKS = gql`
-  query GetAllFeedbacks {
-    feedbacks {
+// query for getting the list of available events
+export const GET_ALL_EVENTS = gql`
+  query GetAllEvents {
+    events {
+      id
+      name
+    }
+  }
+`
+
+// query for getting the feedbacks specific to a single event, or all the feedbacks if $id is not provided
+// (useful for the initial server-side loading, where all available feedbacks should be displayed)
+export const GET_EVENT_FEEDBACKS = gql`
+  query FeedbackForEvent($id: ID) {
+    feedbacksForEvent(id: $id) {
       id
       author
-      content
       rating
+      content
       event {
         id
         name
@@ -15,6 +27,7 @@ export const GET_ALL_FEEDBACKS = gql`
   }
 `
 
+// mutation for adding a new feedback, through the sidebar form
 export const ADD_FEEDBACK = gql`
   mutation AddF($feedback: AddFeedbackInput!) {
     addFeedback(feedback: $feedback) {
@@ -30,50 +43,11 @@ export const ADD_FEEDBACK = gql`
   }
 `
 
-export const GET_ALL_EVENTS = gql`
-  query GetAllEvents {
-    events {
-      id
-      name
-    }
-  }
-`
-
-export const GET_EVENT = gql`
-  query GetEventFeedbacks($id: ID!) {
-    event(id: $id) {
-      feedbacks {
-        id
-        author
-        rating
-        content
-        event {
-          id
-          name
-        }
-      }
-    }
-  }
-`
-
-export const LISTEN_FOR_FEEDBACKS = gql`
+// subscription for listening to incoming feedbacks. Data received is not really used in the app
+// (filtered feedbacks are freshly refetched on arrival)
+export const FEEDBACK_SUBSCRIPTION = gql`
   subscription OnFeedbackAdded {
     feedbackPosted {
-      id
-      author
-      rating
-      content
-      event {
-        id
-        name
-      }
-    }
-  }
-`
-
-export const FEEDBACKS_FOR_EVENT = gql`
-  query FeedbackForEvent($id: ID) {
-    feedbacksForEvent(id: $id) {
       id
       author
       rating

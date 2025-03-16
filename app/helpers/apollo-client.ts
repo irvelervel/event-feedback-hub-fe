@@ -6,18 +6,19 @@ import { split } from '@apollo/client/link/core'
 import { HttpLink } from '@apollo/client/link/http'
 import { getMainDefinition } from '@apollo/client/utilities'
 
+// separates the links, the normal HTTP one will be used for CRUD operations
 const httpLink = new HttpLink({
   uri: `${import.meta.env.VITE_BE_HTTP_URL}/graphql`,
-  // `${import.meta.env.VITE_BE_URL}/graphql`
 })
 
+// separates the links, the WS one will be used for listening to the subscription triggers
 const wsLink = new GraphQLWsLink(
   createClient({
     url: `${import.meta.env.VITE_BE_WS_URL}/graphql`,
-    // url: 'ws://localhost:4000/graphql',
   })
 )
 
+// joins them using the split function from @apollo/client
 const splitLink = split(
   ({ query }) => {
     const definition = getMainDefinition(query)
@@ -30,9 +31,9 @@ const splitLink = split(
   httpLink
 )
 
+// creates the ApolloClient for the whole app
 const createApolloClient = () => {
   return new ApolloClient({
-    // uri: `${import.meta.env.VITE_BE_URL}/graphql`,
     link: splitLink,
     cache: new InMemoryCache(),
   })

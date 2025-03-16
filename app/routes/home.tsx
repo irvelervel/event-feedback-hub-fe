@@ -2,9 +2,9 @@ import type { Route } from './+types/home'
 import createApolloClient from '../helpers/apollo-client'
 import {
   ADD_FEEDBACK,
-  FEEDBACKS_FOR_EVENT,
+  GET_EVENT_FEEDBACKS,
   GET_ALL_EVENTS,
-  LISTEN_FOR_FEEDBACKS,
+  FEEDBACK_SUBSCRIPTION,
 } from '~/graphql/queries'
 import type { Event, Feedback } from '../graphql/__generated__/graphql'
 import { useEffect, useState } from 'react'
@@ -13,15 +13,18 @@ import { Form } from 'react-router'
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'New React Router App' },
-    { name: 'description', content: 'Welcome to React Router!' },
+    { title: 'Event Feedback Hub Application' },
+    {
+      name: 'description',
+      content: 'This is an app written with the React Router V7 Framework',
+    },
   ]
 }
 
 const client = createApolloClient()
 
 export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
-  console.log('IO SONO LOADER')
+  console.log('SSR LOADER')
 
   const [eventsData, feedbacksData] = await Promise.all([
     client.query({
@@ -29,7 +32,7 @@ export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
       fetchPolicy: 'no-cache',
     }),
     client.query({
-      query: FEEDBACKS_FOR_EVENT,
+      query: GET_EVENT_FEEDBACKS,
       fetchPolicy: 'no-cache',
       variables: {
         id: '',
@@ -44,8 +47,7 @@ export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
     data: { feedbacksForEvent },
   } = feedbacksData
 
-  console.log('FEEDBACKS LENGTH', feedbacksForEvent.length)
-
+  // console.log('FEEDBACKS LENGTH', feedbacksForEvent.length)
   // console.log('DATA', events, feedbacksForEvent)
   return { events, feedbacksForEvent }
 }
@@ -54,15 +56,18 @@ export async function clientLoader({
   serverLoader,
   params,
 }: Route.ClientLoaderArgs) {
-  console.log('IO SONO CLIENT LOADER', sessionStorage.getItem('event_filter'))
+  console.log('CLIENT LOADER')
 
   const [eventsData, feedbacksData] = await Promise.all([
     client.query({
       query: GET_ALL_EVENTS,
+      // caching here is available
     }),
     client.query({
-      query: FEEDBACKS_FOR_EVENT,
+      query: GET_EVENT_FEEDBACKS,
+      // caching here is available
       variables: {
+        // retrieves the event id saved by the action
         id: sessionStorage.getItem('event_filter') || '',
       },
     }),
@@ -75,85 +80,79 @@ export async function clientLoader({
     data: { feedbacksForEvent },
   } = feedbacksData
 
-  // console.log('DATA', events, feedbacksForEvent)
   return { events, feedbacksForEvent }
 }
 
-// export async function action({ params, request }: Route.ActionArgs) {
-//   console.log('ACTION!')
-//   const formData = await request.formData()
-//   const updates = Object.fromEntries(formData)
-//   console.log(updates)
-//   // await updateContact(params.contactId, updates);
-//   // return redirect(`/contacts/${params.contactId}`);
-// }
-
-export async function clientAction({
-  // ACTION AVVIENE SOLO SUL SERVER!
-  request,
-  params,
-  serverAction,
-}: Route.ClientActionArgs) {
+export async function clientAction({ request }: Route.ClientActionArgs) {
   let formData = await request.formData()
   const values = Object.fromEntries(formData) as Record<string, any>
-  console.log('VALUES', values)
+  // console.log('VALUES', values)
   values.author = `${values.firstname} ${values.lastname}`
   values.rating = parseInt(values.rating as string)
   delete values.firstname
   delete values.lastname
   // SPIEGA
   sessionStorage.setItem('event_filter', values.event_filter)
-  console.log('SETTO SESSIONSTORAGE', values.event_filter)
+  // console.log('SETTO SESSIONSTORAGE', values.event_filter)
   delete values.event_filter
 
   const client = createApolloClient()
-  const result = await client.mutate({
+  await client.mutate({
     mutation: ADD_FEEDBACK,
     variables: {
       feedback: values,
     },
   })
-  // console.log('FATTO!', result)
   // hack
   const form = document.getElementById('feedback-form') as HTMLFormElement
   form.reset()
-
   return
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  // const feedbacks: Feedback[] = loaderData.feedbacks
-
+  // no need for a useState here, events will be loaded at launch (loader) and updated at every feedback submission (clientLoader)
   const events: Event[] = loaderData.events
 
+  // saving in the component's state the event filter value
   const [selectedEvent, setSelectedEvent] = useState('')
+  // feedbacks have to be stored locally to handle the filtering but most importantly the subscription
   const [feedbacks, setFeedbacks] = useState<Feedback[]>(
     loaderData.feedbacksForEvent
   )
-  const { data, refetch } = useQuery(FEEDBACKS_FOR_EVENT, {
+
+  // preparing an Apollo useQuery hook to grab updated feedbacks on UI interactions and subscription triggers
+  const { data, refetch } = useQuery(GET_EVENT_FEEDBACKS, {
     variables: { id: selectedEvent },
   })
 
+  // preparing an Apollo useSubscription hook to be able to receive new feedback events from Apollo Server on the BE
   const newData = useSubscription<{ feedbackPosted: Feedback }>(
-    LISTEN_FOR_FEEDBACKS
+    FEEDBACK_SUBSCRIPTION
   )
 
-  useEffect(() => {
-    console.log('cambiato filtro evento')
-    refetch()
-  }, [selectedEvent])
-
-  useEffect(() => {
-    console.log('cambiato data', data)
-    if (data && data.feedbacksForEvent) {
-      setFeedbacks(data.feedbacksForEvent)
-    }
-  }, [data])
-
+  // this useEffects puts the feedbacks from the loader functions (at initial load or after a submission) in the local state.
+  // I'd loved to avoid having to rely on a local state for storing feedbacks (and following an approach like the events one)
+  // but since they change on filtering and even from the outside (subscription) I cannot just follow the traditional action/loader
+  // pattern of RR.
   useEffect(() => {
     console.log('ARRIVATI FBS DA LOADER', loaderData.feedbacksForEvent)
     setFeedbacks(loaderData.feedbacksForEvent)
   }, [loaderData.feedbacksForEvent])
+
+  // since we have just one route, changing the event filter doesn't change the URL. Therefore, I'm relying on a local useEffect to
+  // grab fresh feedbacks on event filter change
+  useEffect(() => {
+    // console.log('cambiato filtro evento')
+    refetch()
+  }, [selectedEvent])
+
+  // whenever fresh data comes from a filter change or a subscription trigger, use this data as the new array of feedbacks
+  useEffect(() => {
+    // console.log('cambiato data', data)
+    if (data && data.feedbacksForEvent) {
+      setFeedbacks(data.feedbacksForEvent)
+    }
+  }, [data])
 
   useEffect(() => {
     if (
@@ -320,7 +319,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
         </main>
         <aside className="w-full md:w-80 p-4 bg-gray-200 order-2 md:order-2">
-          <Form id="feedback-form" method="post">
+          <Form id="feedback-form" method="post" autoComplete="off">
             <div className="space-y-12">
               <div className="border-b border-gray-900/10 pb-12">
                 <h2 className="text-base/7 font-semibold text-gray-900">
@@ -427,7 +426,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <input
                         id="rating-5"
                         type="radio"
-                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
+                        className="peer star-spacing size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
                         name="rating"
                         value="5"
                       />
@@ -449,7 +448,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <input
                         id="rating-4"
                         type="radio"
-                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
+                        className="peer star-spacing size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
                         name="rating"
                         value="4"
                       />
@@ -471,9 +470,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <input
                         id="rating-3"
                         type="radio"
-                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
+                        className="peer star-spacing size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
                         name="rating"
                         value="3"
+                        defaultChecked
                       />
                       <label
                         htmlFor="rating-3"
@@ -493,7 +493,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <input
                         id="rating-2"
                         type="radio"
-                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
+                        className="peer star-spacing size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
                         name="rating"
                         value="2"
                       />
@@ -515,7 +515,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <input
                         id="rating-1"
                         type="radio"
-                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
+                        className="peer star-spacing size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
                         name="rating"
                         value="1"
                       />
