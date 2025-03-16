@@ -26,9 +26,11 @@ export async function loader({ serverLoader, params }: Route.ClientLoaderArgs) {
   const [eventsData, feedbacksData] = await Promise.all([
     client.query({
       query: GET_ALL_EVENTS,
+      fetchPolicy: 'no-cache',
     }),
     client.query({
       query: FEEDBACKS_FOR_EVENT,
+      fetchPolicy: 'no-cache',
       variables: {
         id: '',
       },
@@ -137,7 +139,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   )
 
   useEffect(() => {
-    console.log('useEffect')
+    console.log('cambiato filtro evento')
     refetch()
   }, [selectedEvent])
 
@@ -154,8 +156,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, [loaderData.feedbacksForEvent])
 
   useEffect(() => {
-    console.log('SUBSCRIPTION!!', newData)
-    if (newData.data && newData.data.feedbackPosted) {
+    if (
+      newData.data &&
+      newData.data.feedbackPosted
+      // prevents unnecessary traffic, refetches just if the new feedback belongs to the selected filter
+      // && newData.data.feedbackPosted.event.id === selectedEvent
+    ) {
       console.log('FETCHO')
       refetch()
     }
@@ -419,58 +425,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     </label>
                     <div className="flex flex-row-reverse justify-end items-center">
                       <input
-                        id="rating-1"
+                        id="rating-5"
                         type="radio"
                         className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
                         name="rating"
-                        value="1"
+                        value="5"
                       />
                       <label
-                        htmlFor="rating-1"
-                        className="peer-checked:text-yellow-500 text-gray-300 pointer-events-none"
-                      >
-                        <svg
-                          className="shrink-0 size-8"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          fill="currentColor"
-                          viewBox="0 0 16 16"
-                        >
-                          <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
-                        </svg>
-                      </label>
-                      <input
-                        id="rating-2"
-                        type="radio"
-                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
-                        name="rating"
-                        value="2"
-                      />
-                      <label
-                        htmlFor="rating-2"
-                        className="peer-checked:text-yellow-500 text-gray-300 pointer-events-none"
-                      >
-                        <svg
-                          className="shrink-0 size-8"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          fill="currentColor"
-                          viewBox="0 0 16 16"
-                        >
-                          <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
-                        </svg>
-                      </label>
-                      <input
-                        id="rating-3"
-                        type="radio"
-                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
-                        name="rating"
-                        value="3"
-                      />
-                      <label
-                        htmlFor="rating-3"
+                        htmlFor="rating-5"
                         className="peer-checked:text-yellow-500 text-gray-300 pointer-events-none"
                       >
                         <svg
@@ -507,14 +469,58 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                         </svg>
                       </label>
                       <input
-                        id="rating-5"
+                        id="rating-3"
                         type="radio"
                         className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
                         name="rating"
-                        value="5"
+                        value="3"
                       />
                       <label
-                        htmlFor="rating-5"
+                        htmlFor="rating-3"
+                        className="peer-checked:text-yellow-500 text-gray-300 pointer-events-none"
+                      >
+                        <svg
+                          className="shrink-0 size-8"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          viewBox="0 0 16 16"
+                        >
+                          <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
+                        </svg>
+                      </label>
+                      <input
+                        id="rating-2"
+                        type="radio"
+                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
+                        name="rating"
+                        value="2"
+                      />
+                      <label
+                        htmlFor="rating-2"
+                        className="peer-checked:text-yellow-500 text-gray-300 pointer-events-none"
+                      >
+                        <svg
+                          className="shrink-0 size-8"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          viewBox="0 0 16 16"
+                        >
+                          <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
+                        </svg>
+                      </label>
+                      <input
+                        id="rating-1"
+                        type="radio"
+                        className="peer star-negative-margin size-8 bg-transparent border-0 text-transparent cursor-pointer appearance-none checked:bg-none focus:bg-none focus:ring-0 focus:ring-offset-0"
+                        name="rating"
+                        value="1"
+                      />
+                      <label
+                        htmlFor="rating-1"
                         className="peer-checked:text-yellow-500 text-gray-300 pointer-events-none"
                       >
                         <svg
