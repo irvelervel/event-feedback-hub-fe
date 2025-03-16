@@ -1,5 +1,5 @@
 import type { Route } from './+types/home'
-import createApolloClient from '../helpers/apollo-client'
+import createApolloClient from '../utils/apollo-client'
 import {
   ADD_FEEDBACK,
   GET_EVENT_FEEDBACKS,
@@ -10,10 +10,13 @@ import type { Event, Feedback } from '../graphql/__generated__/graphql'
 import { useEffect, useState } from 'react'
 import { useQuery, useSubscription } from '@apollo/client/react/hooks'
 import { Form } from 'react-router'
+import Navbar from '~/components/Navbar'
+import Footer from '~/components/Footer'
+import Hero from '~/components/Hero'
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'Event Feedback Hub Application' },
+    { title: 'Feedback Hub Application' },
     {
       name: 'description',
       content: 'This is an app written with the React Router V7 Framework',
@@ -168,160 +171,164 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="bg-blue-500 p-4">Header</header>
+      <header className="sticky top-0 z-100">
+        <Navbar />
+      </header>
+      <Hero />
+      <hr className="text-gray-300" />
       <div className="flex flex-col md:flex-row flex-grow">
-        <main className="flex-grow p-4 order-1 md:order-1">
-          <div>
-            <form>
-              <div className="space-y-12">
-                <div className="border-b border-gray-900/10 pb-12">
-                  <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                    <div className="sm:col-span-3">
-                      <label
-                        htmlFor="event"
-                        className="block text-sm/6 font-medium text-gray-900"
+        <main className="flex-grow p-4 order-2 md:order-1">
+          <form>
+            <div className="space-y-12">
+              <div className="border-b border-gray-900/10 pb-6">
+                <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 mb-10">
+                  <div className="sm:col-span-3">
+                    <label
+                      htmlFor="event"
+                      className="block text-sm/6 font-medium text-gray-900"
+                    >
+                      Filter by Event
+                    </label>
+                    <div className="mt-2 grid grid-cols-1">
+                      <select
+                        id="event"
+                        name="event"
+                        autoComplete="event-name"
+                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                        onChange={(e) => setSelectedEvent(e.target.value)}
+                        value={selectedEvent}
                       >
-                        Filter by Event
-                      </label>
-                      <div className="mt-2 grid grid-cols-1">
-                        <select
-                          id="event"
-                          name="event"
-                          autoComplete="event-name"
-                          className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                          onChange={(e) => setSelectedEvent(e.target.value)}
-                          value={selectedEvent}
-                        >
-                          <option value="">--</option>
-                          {events.map((ev) => (
-                            <option key={ev.id} value={ev.id}>
-                              {ev.name}
-                            </option>
-                          ))}
-                        </select>
-                        <svg
-                          className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4"
-                          viewBox="0 0 16 16"
-                          fill="currentColor"
-                          aria-hidden="true"
-                          data-slot="icon"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
+                        <option value="">All</option>
+                        {events.map((ev) => (
+                          <option key={ev.id} value={ev.id}>
+                            {ev.name}
+                          </option>
+                        ))}
+                      </select>
+                      <svg
+                        className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        aria-hidden="true"
+                        data-slot="icon"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </div>
               </div>
-              <button
-                type="button"
-                disabled
-                className="m-1 ms-0 relative py-1.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs focus:outline-hidden focus:bg-gray-50"
-              >
-                Live
-                <span className="flex absolute top-0 end-0 -mt-2 -me-2">
-                  <span className="animate-ping absolute inline-flex size-full rounded-full bg-green-400 opacity-75 dark:bg-green-600"></span>
-                  <span className="relative inline-flex text-xs bg-green-500 text-white rounded-full py-2 px-2"></span>
-                </span>
-              </button>
-              <ul
-                aria-label="User feed"
-                role="feed"
-                className="relative flex flex-col gap-12 py-12 pl-8 before:absolute before:top-0 before:left-8 before:h-full before:-translate-x-1/2 before:border before:border-dashed before:border-slate-200 after:absolute after:top-6 after:left-8 after:bottom-6 after:-translate-x-1/2 after:border after:border-slate-200 "
-              >
-                {feedbacks
-                  .slice()
-                  .reverse()
-                  .map((fb) => (
-                    <li key={fb.id} role="article" className="relative pl-8 ">
-                      <div className="flex flex-col flex-1 gap-4">
-                        <a
-                          href="#"
-                          className="absolute z-10 inline-flex items-center justify-center w-8 h-8 text-white rounded-full -left-4 ring-2 ring-white"
-                        >
-                          <img
-                            src={`https://i.pravatar.cc/48?img=${fb.id}`}
-                            alt="user name"
-                            title="user name"
-                            width="48"
-                            height="48"
-                            className="max-w-full rounded-full"
-                          />
-                        </a>
-                        <h4 className="flex flex-col items-start text-lg font-medium leading-8 text-slate-700 md:flex-row lg:items-center">
-                          <span className="flex-1">
-                            {fb.author}
-                            <span className="text-base font-normal text-slate-500">
-                              {' '}
-                              added a feedback on{' '}
-                              <span className="font-bold">{fb.event.name}</span>
-                            </span>
-                          </span>
-                          <span className="text-sm font-normal text-slate-400">
+            </div>
+          </form>
+          <div className="relative">
+            <button
+              type="button"
+              disabled
+              className="m-1 ms-0 relative py-1.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs focus:outline-hidden focus:bg-gray-50 absolute -translate-x-1/2 -translate-y-1/2 top-0 left-1/2"
+            >
+              Live Stream
+              <span className="flex absolute top-0 end-0 -mt-2 -me-2">
+                <span className="animate-ping absolute inline-flex size-full rounded-full bg-green-400 opacity-75 dark:bg-green-600"></span>
+                <span className="relative inline-flex text-xs bg-green-500 text-white rounded-full py-2 px-2"></span>
+              </span>
+            </button>
+            <ul
+              aria-label="User feed"
+              role="feed"
+              className="relative flex flex-col gap-12 py-12 pl-8 before:absolute before:top-0 before:left-8 before:h-full before:-translate-x-1/2 before:border before:border-dashed before:border-slate-200 after:absolute after:top-6 after:left-8 after:bottom-6 after:-translate-x-1/2 after:border after:border-slate-200 "
+            >
+              {feedbacks
+                .slice()
+                .reverse()
+                .map((fb) => (
+                  <li key={fb.id} role="article" className="relative pl-8 ">
+                    <div className="flex flex-col flex-1 gap-4">
+                      <a
+                        href="#"
+                        className="absolute z-10 inline-flex items-center justify-center w-8 h-8 text-white rounded-full -left-4 ring-2 ring-white"
+                      >
+                        <img
+                          src={`https://i.pravatar.cc/48?img=${fb.id}`}
+                          alt="user name"
+                          title="user name"
+                          width="48"
+                          height="48"
+                          className="max-w-full rounded-full"
+                        />
+                      </a>
+                      <h4 className="flex flex-col items-start text-lg font-medium leading-8 text-slate-700 md:flex-row lg:items-center">
+                        <span className="flex-1">
+                          {fb.author}
+                          <span className="text-base font-normal text-slate-500">
                             {' '}
-                            3 hours ago
+                            added a feedback on{' '}
+                            <span className="font-bold">{fb.event.name}</span>
                           </span>
-                        </h4>
-                        <div className="flex">
-                          <div className="flex items-center me-3">
-                            {Array(fb.rating)
-                              .fill('')
-                              .map((_, i) => (
-                                <button
-                                  type="button"
-                                  key={i}
-                                  className="size-5 inline-flex justify-center items-center text-2xl rounded-full text-yellow-400 disabled:opacity-50 disabled:pointer-events-none dark:text-yellow-500"
+                        </span>
+                        <span className="text-sm font-normal text-slate-400">
+                          {' '}
+                          3 hours ago
+                        </span>
+                      </h4>
+                      <div className="flex">
+                        <div className="flex items-center me-3">
+                          {Array(fb.rating)
+                            .fill('')
+                            .map((_, i) => (
+                              <button
+                                type="button"
+                                key={i}
+                                className="size-5 inline-flex justify-center items-center text-2xl rounded-full text-yellow-400 disabled:opacity-50 disabled:pointer-events-none dark:text-yellow-500"
+                              >
+                                <svg
+                                  className="shrink-0 size-5"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  fill="currentColor"
+                                  viewBox="0 0 16 16"
                                 >
-                                  <svg
-                                    className="shrink-0 size-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                  >
-                                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
-                                  </svg>
-                                </button>
-                              ))}
-                            {Array(5 - fb.rating)
-                              .fill('')
-                              .map((_, i) => (
-                                <button
-                                  type="button"
-                                  key={i}
-                                  className="size-5 inline-flex justify-center items-center text-2xl rounded-full text-gray-300 disabled:opacity-50 disabled:pointer-events-none"
+                                  <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
+                                </svg>
+                              </button>
+                            ))}
+                          {Array(5 - fb.rating)
+                            .fill('')
+                            .map((_, i) => (
+                              <button
+                                type="button"
+                                key={i}
+                                className="size-5 inline-flex justify-center items-center text-2xl rounded-full text-gray-300 disabled:opacity-50 disabled:pointer-events-none"
+                              >
+                                <svg
+                                  className="shrink-0 size-5"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  fill="currentColor"
+                                  viewBox="0 0 16 16"
                                 >
-                                  <svg
-                                    className="shrink-0 size-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                  >
-                                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
-                                  </svg>
-                                </button>
-                              ))}
-                          </div>
-                          <p className=" text-slate-500">{fb.content}</p>
+                                  <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"></path>
+                                </svg>
+                              </button>
+                            ))}
                         </div>
+                        <p className=" text-slate-500">{fb.content}</p>
                       </div>
-                    </li>
-                  ))}
-              </ul>
-            </form>
+                    </div>
+                  </li>
+                ))}
+            </ul>
           </div>
         </main>
-        <aside className="w-full md:w-80 p-4 bg-gray-200 order-2 md:order-2">
+        <aside className="w-full md:w-128 p-4 bg-gray-200 order-1 md:order-2 md:sticky md:top-[64px] md:h-[44vh]">
           <Form id="feedback-form" method="post" autoComplete="off">
             <div className="space-y-12">
-              <div className="border-b border-gray-900/10 pb-12">
+              <div>
                 <h2 className="text-base/7 font-semibold text-gray-900">
                   Add a feedback
                 </h2>
@@ -553,14 +560,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       ></textarea>
                     </div>
                     <p className="mt-3 text-sm/6 text-gray-600">
-                      You'll be live in a matter of seconds!
+                      You'll be live in no time!
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-x-6">
+            <div className="mt-6 flex items-center gap-x-6">
               <button
                 type="submit"
                 className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
@@ -571,7 +578,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </Form>
         </aside>
       </div>
-      <footer className="bg-gray-300 p-4">Footer</footer>
+      <Footer />
     </div>
   )
 }

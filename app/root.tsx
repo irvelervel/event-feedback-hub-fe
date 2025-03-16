@@ -8,7 +8,7 @@ import {
   ScrollRestoration,
 } from 'react-router'
 import { ApolloProvider } from '@apollo/client/react'
-import createApolloClient from './helpers/apollo-client'
+import createApolloClient from './utils/apollo-client'
 import './app.css'
 
 // ...the standard root.tsx from the template
