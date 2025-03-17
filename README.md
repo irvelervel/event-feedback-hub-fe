@@ -1,18 +1,26 @@
-# Welcome to React Router!
+# Feedback Hub - Frontend
 
-A modern, production-ready template for building full-stack React applications using React Router.
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+This application is designed to allow users to share their feedback on several events and to show a real-time feed of contributions.
 
 ## Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- Built using the `react-router` Framework
+- `GraphQL` queries via `@apollo/client`
+- Filters for events and ratings
+- Live Stream of feedbacks with `GraphQL` subscriptions (open it on several devices to test it out!)
+- `tailwind` Styling
+
+## Operation
+
+The application operates on a single route on which a component called Home is mounted.
+
+Home initially performs a server-side retrieval through GraphQL of all the events and the feedbacks available (leveraging the `loader` system in `react-router`), preparing the initial view for a fast first load in the browser.
+
+Another server-side query is performed after every new feedback submission, leveraging the `action` and the automatic data validation of `react-router`.
+
+Other UI operations, like setting filters, fetch corresponding results on-demand using the `useQuery` hook of `@apollo/query`.
+
+Lastly, the `useSubscription` hook keeps a websocket connection alive to the backend in order to listen for new feedbacks from other clients connected; when a notification is received, feedbacks are fetched again accordingly to the selected filters.
 
 ## Getting Started
 
@@ -24,6 +32,18 @@ Install the dependencies:
 npm install
 ```
 
+### Environment Variables
+
+You need a couple of env vars to get this started:
+
+```bash
+VITE_BE_HTTP_URL
+VITE_BE_WS_URL
+```
+
+They can point to the same URL with different protocols: `http` for the former and `ws` for the latter.
+A `.env.example` file can be found in the repository.
+
 ### Development
 
 Start the development server with HMR:
@@ -32,56 +52,4 @@ Start the development server with HMR:
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+The project will be available at `http://localhost:5173`.
